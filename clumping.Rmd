@@ -91,10 +91,39 @@ calc_clumped_tables <- function(seating){
 # I don't really need cache=TRUE since the code does not take *that* long to
 # run. I just wanted to remind you of that trick.
 
+# map takes the first object and runs the next argument on it
+
 sim <- 
   tibble(replication = 1:10000) %>% 
   mutate(seating_plan = map(replication, ~ seat_a_class())) %>% 
+  
+  # takes each seating plan list and runs it through the calc_clumped_tables
+  # function
+  
   mutate(clumps = map_int(seating_plan, ~ calc_clumped_tables(.)))
+
+# find the 95% confidence interval of the distribution of clumps. The observed value is within the confidence interval
+
+quantile(sim$clumps, c(.025, .975))
+
+# Calculate the mean
+mean(sim$clumps)
+
+num_greater_than_3 <- sim %>%
+  filter(clumps >= 3) %>%
+  count(n()) %>%
+  pull()
+
+# calculate p-value (defined on page 50)
+
+num_greater_than_3/nrow(sim)
+
+# because the p value is < .05, we can reject the null. This is because this indicates that there is less than a 3.07% chance of our observation happening by chance under the null hypothesis. Thus, this provides evidence that there is some clumping going on. 
+
+
+
+
+
 
 ```
 
